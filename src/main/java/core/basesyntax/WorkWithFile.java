@@ -61,7 +61,6 @@ public class WorkWithFile {
                 .append(REPORT_BUY).append(SEPARATOR).append(buy).append(LINE_SEPARATOR)
                 .append(REPORT_RESULT).append(SEPARATOR).append(result);
 
-
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(toFileName))) {
             bufferedWriter.write(reportBuilder.toString());
         } catch (IOException e) {
