@@ -1,6 +1,11 @@
 package core.basesyntax;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public class WorkWithFile {
     private static final int INITIAL_VALUE = 0;
@@ -17,12 +22,12 @@ public class WorkWithFile {
             while ((csvData = bufferedReader.readLine()) != null) {
                 String[] dataParts = csvData.split(",");
                 String operation = dataParts[OPERATION_PART];
-                int transactionAnount = Integer.parseInt(dataParts[TRANSACTION_AMOUNT_PART]);
+                int transactionAmount = Integer.parseInt(dataParts[TRANSACTION_AMOUNT_PART]);
 
                 if (operation.equals("supply")) {
-                    supply += transactionAnount;
+                    supply += transactionAmount;
                 } else if (operation.equals("buy")) {
-                    buy += transactionAnount;
+                    buy += transactionAmount;
                 }
             }
         } catch (FileNotFoundException e) {
