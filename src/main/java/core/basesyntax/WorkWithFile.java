@@ -13,8 +13,13 @@ public class WorkWithFile {
     private static final int TRANSACTION_AMOUNT_PART = 1;
     private static final String OPERATION_SUPPLY = "supply";
     private static final String OPERATION_BUY = "buy";
+    private static final String REPORT_SUPPLY = "supply";
+    private static final String REPORT_BUY = "buy";
+    private static final String REPORT_RESULT = "result";
+    private static final String SEPARATOR = ",";
+    private static final String LINE_SEPARATOR = System.lineSeparator();
 
-    public void getStatistic(String fromFileName, String toFileName) {
+    public String getStatistic(String fromFileName, String toFileName) {
         int supply = INITIAL_VALUE;
         int buy = INITIAL_VALUE;
 
@@ -29,7 +34,12 @@ public class WorkWithFile {
                 }
 
                 String operation = dataParts[OPERATION_PART];
-                int transactionAmount = Integer.parseInt(dataParts[TRANSACTION_AMOUNT_PART]);
+                int transactionAmount;
+                try {
+                    transactionAmount = Integer.parseInt(dataParts[TRANSACTION_AMOUNT_PART]);
+                } catch (NumberFormatException e) {
+                    throw new RuntimeException("Invalid number in CSV line: " + csvData, e);
+                }
 
                 if (OPERATION_SUPPLY.equals(operation)) {
                     supply += transactionAmount;
@@ -47,14 +57,17 @@ public class WorkWithFile {
 
         int result = supply - buy;
         StringBuilder reportBuilder = new StringBuilder();
-        reportBuilder.append("supply,").append(supply).append(System.lineSeparator())
-                .append("buy,").append(buy).append(System.lineSeparator())
-                .append("result,").append(result);
+        reportBuilder.append(REPORT_SUPPLY).append(SEPARATOR).append(supply).append(LINE_SEPARATOR)
+                .append(REPORT_BUY).append(SEPARATOR).append(buy).append(LINE_SEPARATOR)
+                .append(REPORT_RESULT).append(SEPARATOR).append(result);
+
 
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(toFileName))) {
             bufferedWriter.write(reportBuilder.toString());
         } catch (IOException e) {
-            System.out.println("Can`t write to file" + toFileName);
+            throw new RuntimeException("Can`t write to file" + toFileName, e);
         }
+
+        return reportBuilder.toString();
     }
 }
