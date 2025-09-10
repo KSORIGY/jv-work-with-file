@@ -13,13 +13,29 @@ public class WorkWithFile {
     private static final int TRANSACTION_AMOUNT_PART = 1;
     private static final String OPERATION_SUPPLY = "supply";
     private static final String OPERATION_BUY = "buy";
-    private static final String OPERATION_RESULT= "result";
+    private static final String OPERATION_RESULT = "result";
     private static final String SEPARATOR = ",";
     private static final String LINE_SEPARATOR = System.lineSeparator();
 
     private static class Aggregates {
-        int totalSupply = INITIAL_VALUE;
-        int totalBuy = INITIAL_VALUE;
+        private int totalSupply = INITIAL_VALUE;
+        private int totalBuy = INITIAL_VALUE;
+
+        public void addSupply(int amount) {
+            this.totalSupply += amount;
+        }
+
+        public void addBuy(int amount) {
+            this.totalBuy += amount;
+        }
+
+        public int getTotalSupply() {
+            return totalSupply;
+        }
+
+        public int getTotalBuy() {
+            return totalBuy;
+        }
     }
 
     public String getStatistic(String fromFileName, String toFileName) {
@@ -38,7 +54,8 @@ public class WorkWithFile {
                 String[] dataParts = csvData.split(SEPARATOR);
 
                 if (dataParts.length != 2) {
-                    throw new RuntimeException("Malformed CSV line in file: " + fileName + "line: " + csvData);
+                    throw new RuntimeException(
+                            "Malformed CSV line in file: " + fileName + "line: " + csvData);
                 }
 
                 String operation = dataParts[OPERATION_PART].trim();
@@ -53,9 +70,9 @@ public class WorkWithFile {
                 }
 
                 if (OPERATION_SUPPLY.equals(operation)) {
-                    aggregates.totalSupply += transactionAmount;
+                    aggregates.addSupply(transactionAmount);
                 } else if (OPERATION_BUY.equals(operation)) {
-                    aggregates.totalBuy += transactionAmount;
+                    aggregates.addBuy(transactionAmount);
                 } else {
                     throw new RuntimeException(
                             "Unknown operation in file: " + fileName + "line: " + csvData);
@@ -70,10 +87,12 @@ public class WorkWithFile {
     }
 
     private String buildReport(Aggregates aggregates) {
-        int result = aggregates.totalSupply - aggregates.totalBuy;
+        int result = aggregates.getTotalSupply() - aggregates.getTotalBuy();
         return new StringBuilder()
-                .append(OPERATION_SUPPLY).append(SEPARATOR).append(aggregates.totalSupply).append(LINE_SEPARATOR)
-                .append(OPERATION_BUY).append(SEPARATOR).append(aggregates.totalBuy).append(LINE_SEPARATOR)
+                .append(OPERATION_SUPPLY).append(SEPARATOR)
+                .append(aggregates.totalSupply).append(LINE_SEPARATOR)
+                .append(OPERATION_BUY).append(SEPARATOR)
+                .append(aggregates.totalBuy).append(LINE_SEPARATOR)
                 .append(OPERATION_RESULT).append(SEPARATOR).append(result)
                 .toString();
     }
@@ -81,7 +100,7 @@ public class WorkWithFile {
     private void writeReport(String report, String toFileName) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(toFileName))) {
             bufferedWriter.write(report);
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(
                     "Can`t write data to file " + toFileName, e);
         }
