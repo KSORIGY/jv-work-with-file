@@ -13,60 +13,77 @@ public class WorkWithFile {
     private static final int TRANSACTION_AMOUNT_PART = 1;
     private static final String OPERATION_SUPPLY = "supply";
     private static final String OPERATION_BUY = "buy";
-    private static final String REPORT_SUPPLY = "supply";
-    private static final String REPORT_BUY = "buy";
-    private static final String REPORT_RESULT = "result";
+    private static final String OPERATION_RESULT= "result";
     private static final String SEPARATOR = ",";
     private static final String LINE_SEPARATOR = System.lineSeparator();
 
-    public String getStatistic(String fromFileName, String toFileName) {
-        int supply = INITIAL_VALUE;
-        int buy = INITIAL_VALUE;
+    private static class Aggregates {
+        int totalSupply = INITIAL_VALUE;
+        int totalBuy = INITIAL_VALUE;
+    }
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(fromFileName))) {
+    public String getStatistic(String fromFileName, String toFileName) {
+        Aggregates aggregates = aggregateFromFile(fromFileName);
+        String report = buildReport(aggregates);
+        writeReport(report, toFileName);
+        return report;
+    }
+
+    private Aggregates aggregateFromFile(String fileName) {
+        Aggregates aggregates = new Aggregates();
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName))) {
             String csvData;
 
             while ((csvData = bufferedReader.readLine()) != null) {
-                String[] dataParts = csvData.split(",");
+                String[] dataParts = csvData.split(SEPARATOR);
 
                 if (dataParts.length != 2) {
-                    throw new RuntimeException("Malformed CSV line: " + csvData);
+                    throw new RuntimeException("Malformed CSV line in file: " + fileName + "line: " + csvData);
                 }
 
-                String operation = dataParts[OPERATION_PART];
+                String operation = dataParts[OPERATION_PART].trim();
+                String amountToken = dataParts[TRANSACTION_AMOUNT_PART].trim();
+
                 int transactionAmount;
                 try {
-                    transactionAmount = Integer.parseInt(dataParts[TRANSACTION_AMOUNT_PART]);
+                    transactionAmount = Integer.parseInt(amountToken);
                 } catch (NumberFormatException e) {
-                    throw new RuntimeException("Invalid number in CSV line: " + csvData, e);
+                    throw new RuntimeException(
+                            "Can`t parse amount in file: " + fileName + "line: " + csvData, e);
                 }
 
                 if (OPERATION_SUPPLY.equals(operation)) {
-                    supply += transactionAmount;
+                    aggregates.totalSupply += transactionAmount;
                 } else if (OPERATION_BUY.equals(operation)) {
-                    buy += transactionAmount;
+                    aggregates.totalBuy += transactionAmount;
                 } else {
-                    throw new RuntimeException("Unknown operation: " + csvData);
+                    throw new RuntimeException(
+                            "Unknown operation in file: " + fileName + "line: " + csvData);
                 }
             }
         } catch (FileNotFoundException e) {
-            System.out.println("File not found" + fromFileName);
+            throw new RuntimeException("File not found: " + fileName, e);
         } catch (IOException e) {
-            System.out.println("Can`t read file" + fromFileName);
+            throw new RuntimeException("Can`t read data from file: " + fileName, e);
         }
+        return aggregates;
+    }
 
-        int result = supply - buy;
-        StringBuilder reportBuilder = new StringBuilder();
-        reportBuilder.append(REPORT_SUPPLY).append(SEPARATOR).append(supply).append(LINE_SEPARATOR)
-                .append(REPORT_BUY).append(SEPARATOR).append(buy).append(LINE_SEPARATOR)
-                .append(REPORT_RESULT).append(SEPARATOR).append(result);
+    private String buildReport(Aggregates aggregates) {
+        int result = aggregates.totalSupply - aggregates.totalBuy;
+        return new StringBuilder()
+                .append(OPERATION_SUPPLY).append(SEPARATOR).append(aggregates.totalSupply).append(LINE_SEPARATOR)
+                .append(OPERATION_BUY).append(SEPARATOR).append(aggregates.totalBuy).append(LINE_SEPARATOR)
+                .append(OPERATION_RESULT).append(SEPARATOR).append(result)
+                .toString();
+    }
 
+    private void writeReport(String report, String toFileName) {
         try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(toFileName))) {
-            bufferedWriter.write(reportBuilder.toString());
-        } catch (IOException e) {
-            throw new RuntimeException("Can`t write to file" + toFileName, e);
+            bufferedWriter.write(report);
+        } catch (IOException e){
+            throw new RuntimeException(
+                    "Can`t write data to file " + toFileName, e);
         }
-
-        return reportBuilder.toString();
     }
 }
