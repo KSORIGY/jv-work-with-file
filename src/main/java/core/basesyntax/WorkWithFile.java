@@ -11,6 +11,8 @@ public class WorkWithFile {
     private static final int INITIAL_VALUE = 0;
     private static final int OPERATION_PART = 0;
     private static final int TRANSACTION_AMOUNT_PART = 1;
+    private static final String OPERATION_SUPPLY = "supply";
+    private static final String OPERATION_BUY = "buy";
 
     public void getStatistic(String fromFileName, String toFileName) {
         int supply = INITIAL_VALUE;
@@ -21,13 +23,20 @@ public class WorkWithFile {
 
             while ((csvData = bufferedReader.readLine()) != null) {
                 String[] dataParts = csvData.split(",");
+
+                if (dataParts.length != 2) {
+                    throw new RuntimeException("Malformed CSV line: " + csvData);
+                }
+
                 String operation = dataParts[OPERATION_PART];
                 int transactionAmount = Integer.parseInt(dataParts[TRANSACTION_AMOUNT_PART]);
 
-                if (operation.equals("supply")) {
+                if (OPERATION_SUPPLY.equals(operation)) {
                     supply += transactionAmount;
-                } else if (operation.equals("buy")) {
+                } else if (OPERATION_BUY.equals(operation)) {
                     buy += transactionAmount;
+                } else {
+                    throw new RuntimeException("Unknown operation: " + csvData);
                 }
             }
         } catch (FileNotFoundException e) {
